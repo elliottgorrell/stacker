@@ -24,6 +24,7 @@ class DeployExecutor(object):
                 debug=False):
 
         try:
+            config_params = dict
 
             if config_filename is not None:
                 if debug:
