@@ -18,10 +18,18 @@ class DeployExecutor(object):
     REGEX_YAML = re.compile('.+\.yaml|.+.yml')
     REGEX_JSON = re.compile('.+\.json')
 
+    cf_client = None
+    ec2_client = None
+    kms_client = None
+
+    role = None
+
     def execute(self, stack_name, config_filename, template_name,
                 role, add_parameters, version, ami_id, ami_tag_value,
                 scope, create=False, delete=False, dry_run=False,
                 debug=False):
+
+        self.role = role
 
         try:
             config_params = dict
@@ -39,8 +47,9 @@ class DeployExecutor(object):
                 adds = dict(item.split("=") for item in add_parameters)
                 config_params.update(adds)
 
-            cf_client, ec2_client, kms_client = self.get_boto3_clients(role)
-            cf_util = CloudFormationUtil(cf_client)
+            self.create_boto_clients()
+
+            cf_util = CloudFormationUtil(self.cf_client)
 
             if version:
                 config_params["VersionParam"] = version
@@ -50,7 +59,7 @@ class DeployExecutor(object):
             if ami_id:
                 config_params["AMIParam"] = ami_id
             elif ami_tag_value:
-                config_params["AMIParam"] = self.get_ami_id_by_tag(ami_tag_value, ec2_client)
+                config_params["AMIParam"] = self.get_ami_id_by_tag(ami_tag_value)
 
 
             secrets = []
@@ -64,7 +73,7 @@ class DeployExecutor(object):
                 encryption_check = re.search('KMSEncrypted(.*)/KMSEncrypted', config_params[key])
 
                 if encryption_check:
-                    decrypted_value = kms_client.decrypt(CiphertextBlob=base64.b64decode(encryption_check.group(1)))["Plaintext"]
+                    decrypted_value = self.kms_client.decrypt(CiphertextBlob=base64.b64decode(encryption_check.group(1)))["Plaintext"]
                     config_params[key] = decrypted_value
                     secrets += [decrypted_value]
 
@@ -87,33 +96,33 @@ class DeployExecutor(object):
 
             if create:
                 change_set_name = "Create-{}".format(version.replace(".", "-"))
-                changeset = self.get_change_set(stack_name, raw_cloudformation, parameters, change_set_name, cf_client, create)
+                changeset = self.get_change_set(stack_name, raw_cloudformation, parameters, change_set_name, create)
 
             elif delete:
                 if not dry_run:
-                    result = cf_client.delete_stack(StackName=stack_name)
+                    result = self.cf_client.delete_stack(StackName=stack_name)
                     print result
                 else:
                     print "[Dry-Run] Not deleting stack."
             else:
                 change_set_name = "Update-{}".format(version.replace(".", "-"))
-                changeset = self.get_change_set(stack_name, raw_cloudformation, parameters, change_set_name, cf_client)
+                changeset = self.get_change_set(stack_name, raw_cloudformation, parameters, change_set_name)
 
             if changeset is not None:
                 cf_util.wait_for_change_set_to_complete(change_set_name=change_set_name,
                                                                     stack_name=stack_name,
                                                                     debug=False)
 
-                change_set_details = cf_client.describe_change_set(ChangeSetName=change_set_name,
+                change_set_details = self.cf_client.describe_change_set(ChangeSetName=change_set_name,
                                                                    StackName=stack_name)
 
                 self.print_change_set(change_set_details)
 
                 if dry_run:
-                    response = cf_client.delete_change_set(ChangeSetName=change_set_name,
+                    response = self.cf_client.delete_change_set(ChangeSetName=change_set_name,
                                                            StackName=stack_name)
                 else:
-                    response = cf_client.execute_change_set(ChangeSetName=change_set_name,
+                    response = self.cf_client.execute_change_set(ChangeSetName=change_set_name,
                                                             StackName=stack_name)
 
                     cf_util.wait_for_deploy_to_complete(stack_name=stack_name)
@@ -135,31 +144,28 @@ class DeployExecutor(object):
             traceback.print_exc(file=sys.stdout)
             sys.exit(1)
 
-    def get_boto3_clients(self, role = None):
-        if role:
-            sts = STSUtil(sts_arn=role, debug=True)
-            credentials = sts.authenticate_role()['Credentials']
+    def create_boto_clients(self):
+        if self.ec2_client is None:
+            self.ec2_client = self._boto_connect('ec2')
+        if self.cf_client is None:
+            self.cf_client = self._boto_connect('cloudformation')
+        if self.kms_client is None:
+            self.kms_client = self._boto_connect('kms')
 
-            cf_client = boto3.client('cloudformation',
+    def _boto_connect(self, client_type):
+        if self.role:
+            sts = STSUtil(sts_arn=self.role, debug=True)
+            credentials = sts.authenticate_role()['Credentials']
+            client = boto3.client(client_type,
                                      aws_access_key_id=credentials['AccessKeyId'],
                                      aws_secret_access_key=credentials['SecretAccessKey'],
-                                     aws_session_token=credentials['SessionToken'], )
-            ec2_client = boto3.client('ec2',
-                                      aws_access_key_id=credentials['AccessKeyId'],
-                                      aws_secret_access_key=credentials['SecretAccessKey'],
-                                      aws_session_token=credentials['SessionToken'], )
-            kms_client = boto3.client('kms',
-                                      aws_access_key_id=credentials['AccessKeyId'],
-                                      aws_secret_access_key=credentials['SecretAccessKey'],
-                                      aws_session_token=credentials['SessionToken'], )
+                                     aws_session_token=credentials['SessionToken'])
 
         # If no role is specified the current environments will be used
         else:
-            cf_client = boto3.client('cloudformation')
-            ec2_client = boto3.client('ec2')
-            kms_client = boto3.client('kms')
+            client = boto3.client(client_type)
 
-        return cf_client, ec2_client, kms_client
+        return client
 
     def load_parameters(self, config_filename, scope):
         try:
@@ -187,8 +193,8 @@ class DeployExecutor(object):
         except Exception as error:
             raise DeployException("Unable to open config file '{}'\n{}".format(config_filename, error))
 
-    def get_ami_id_by_tag(self, ec2_client, ami_tag_value):
-        images = ec2_client.describe_images(Filters=[
+    def get_ami_id_by_tag(self, ami_tag_value):
+        images = self.ec2_client.describe_images(Filters=[
             {'Name': 'tag:ArtifactID',
              'Values': [ami_tag_value]}
         ])['Images']
@@ -255,9 +261,9 @@ class DeployExecutor(object):
         else:
             print "Specified template has no stack parameters"
 
-    def get_change_set(self, stack_name, cloudformation, parameters, change_set_name, cf_client, create = False):
+    def get_change_set(self, stack_name, cloudformation, parameters, change_set_name, create = False):
         if create:
-            changeset = cf_client.create_change_set(
+            changeset = self.cf_client.create_change_set(
                 StackName=stack_name,
                 TemplateBody=cloudformation,
                 Parameters=parameters,
@@ -268,7 +274,7 @@ class DeployExecutor(object):
                 ChangeSetType="CREATE"
                 )
         else:
-            changeset = cf_client.create_change_set(
+            changeset = self.cf_client.create_change_set(
                 StackName=stack_name,
                 TemplateBody=cloudformation,
                 Parameters=parameters,
