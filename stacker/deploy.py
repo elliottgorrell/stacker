@@ -79,12 +79,20 @@ class DeployExecutor(object):
 
             try:
                 with open(template_name, "r") as myfile:
-                    raw_cloudformation = myfile.read()
-            except Exception as error:
-                raise DeployException("Unable to locate CloudFormation template ''{}'\n{}"
-                                      .format(template_name, error))
+                    if re.match(self.REGEX_YAML, template_name):
+                        cloudformation = yaml.load(myfile)
+                    elif re.match(self.REGEX_JSON, template_name):
+                        cloudformation = json.load(myfile)
+                    else:
+                        raise DeployException("Cloudformation template must be a JSON or YAML file")
 
-            cloudformation = self.load_cloudformation_file(template_name, raw_cloudformation)
+                raw_cloudformation = str(cloudformation)
+
+            except Exception as error:
+                raise DeployException("Unable to open CloudFormation template '{}'\n{}".format(template_name, error))
+
+            if cloudformation is None:
+                raise DeployException("It looks like the CloudFormation template file is empty")
 
             # Go through parameters needed and fill them in from the parameters provided in the config file
             # They need to be re-formated from the python dictionary into boto3 useable format
@@ -209,24 +217,6 @@ class DeployExecutor(object):
             print "Located AMI {} - {} created {}".format(ami_id, images[0]['Name'], images[0]['CreationDate'])
 
         return ami_id
-
-    def load_cloudformation_file(self, template_name, raw_cloudformation):
-        try:
-            if re.match(self.REGEX_YAML, template_name):
-                cloudformation = yaml.load(raw_cloudformation)
-            elif re.match(self.REGEX_JSON, template_name):
-                cloudformation = json.load(raw_cloudformation)
-            else:
-                raise DeployException("Cloudformation template must be a JSON or YAML file")
-
-        except Exception as error:
-            raise DeployException("Unable to parse CloudFormation template '{}'\n{}"
-                                  .format(template_name, error))
-
-        if cloudformation is None:
-            raise DeployException("It looks like the CloudFormation template file is empty")
-
-        return cloudformation
 
     def import_params_from_config(self, cloudformation, config_params, create, secrets = []):
         parameters = []
