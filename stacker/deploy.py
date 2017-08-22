@@ -77,22 +77,8 @@ class DeployExecutor(object):
                     config_params[key] = decrypted_value
                     secrets += [decrypted_value]
 
-            try:
-                with open(template_name, "r") as myfile:
-                    if re.match(self.REGEX_YAML, template_name):
-                        cloudformation = yaml.load(myfile)
-                    elif re.match(self.REGEX_JSON, template_name):
-                        cloudformation = json.load(myfile)
-                    else:
-                        raise DeployException("Cloudformation template must be a JSON or YAML file")
-
-                raw_cloudformation = str(cloudformation)
-
-            except Exception as error:
-                raise DeployException("Unable to open CloudFormation template '{}'\n{}".format(template_name, error))
-
-            if cloudformation is None:
-                raise DeployException("It looks like the CloudFormation template file is empty")
+            cloudformation = self.load_cloudformation(template_name)
+            raw_cloudformation = str(cloudformation)
 
             # Go through parameters needed and fill them in from the parameters provided in the config file
             # They need to be re-formated from the python dictionary into boto3 useable format
@@ -175,7 +161,7 @@ class DeployExecutor(object):
 
         return client
 
-    def load_parameters(self, config_filename, scope):
+    def load_parameters(self, config_filename, scope=None):
         try:
             with open(config_filename) as config_file:
                 if re.match(self.REGEX_YAML, config_filename):
@@ -194,9 +180,6 @@ class DeployExecutor(object):
                 parameters = config_data
 
             return parameters
-
-        except DeployException as ex:
-            raise ex
 
         except Exception as error:
             raise DeployException("Unable to open config file '{}'\n{}".format(config_filename, error))
@@ -305,3 +288,22 @@ class DeployExecutor(object):
             print ""
         else:
             print "No CloudFormation changes detected"
+
+    def load_cloudformation(self, template_name):
+        try:
+            with open(template_name, "r") as myfile:
+                if re.match(self.REGEX_YAML, template_name):
+                    cloudformation = yaml.load(myfile)
+                elif re.match(self.REGEX_JSON, template_name):
+                    cloudformation = json.load(myfile)
+                else:
+                    raise DeployException("Cloudformation template must be a JSON or YAML file")
+
+        except Exception as error:
+            raise DeployException("Unable to open CloudFormation template '{}'\n{}".format(template_name, error))
+
+
+        if cloudformation is None:
+            raise DeployException("It looks like the CloudFormation template file is empty")
+
+        return cloudformation
