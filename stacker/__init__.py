@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from stacker import *
 import yaml
 
 
