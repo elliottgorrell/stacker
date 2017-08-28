@@ -12,6 +12,20 @@ pip install .
 
 Now you are ready to use the `stacker` command line tool to deliver change to your application environments.
 
+## Testing
+
+We use `Tox` and `PyTest` for unit testing Stacker.
+PyTest is a nice testing framework that gets rid of a lot of the boilerplate code from the standard `unittesting` framework.
+Tox handles packagin running the tests in different python environments. This helps make sure what you package and upload actually both
+installs correctly and is supported by all the environments we claim.
+
+Simply run `tox` inside the project.
+This will create virtual environments for each python environment listed in `tox.ini`
+Tox will then package up the application and run any tests found for PyTest in each environment.
+Tests are discovered using standard PyTest standards such as the `test_` prefix on a filename.
+
+
+
 
 ## Usage
 
