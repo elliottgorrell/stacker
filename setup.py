@@ -61,10 +61,10 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ],
-
-    # You can just specify the packages manually here if your project is
-    # simple. Or you can use find_packages().
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    # packages=['stacker'],
+    # package_dir={'stacker':'stacker'},
+    package_data={'':['../README.md']},
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:

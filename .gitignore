@@ -1,3 +1,10 @@
+# Ignore any jetbrains related files
 .idea/*
+# Ignore packaging
 stacker.egg-info/*
+build/*
+# Ignore compiled python
 *.pyc
+# Ignore TOX testing files
+.tox/*
+.cache/*
