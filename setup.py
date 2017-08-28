@@ -77,6 +77,8 @@ setup(
     # install_requires=['peppercorn'],
     install_requires=['boto3>=1.4.4', 'lxml', 'PyYAML>=3.12'],
 
+    tests_require=['pytest', 'mock', 'tox'],
+
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

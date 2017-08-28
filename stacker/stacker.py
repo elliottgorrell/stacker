@@ -1,3 +1,5 @@
+from stacker.cf_helper.utils import DeployException
+
 __author__ = 'steve.mactaggart'
 
 import argparse
@@ -90,11 +92,20 @@ def build_ami_parser(parser):
 
 def execute_ami(args):
 
-    executor = AMIExecutor()
-    executor.execute(role=args.role,
-                     ami_id=args.ami_id,
-                     artifact_id=args.artifact_id,
-                     debug=args.debug)
+    executor = AMIExecutor(role=args.role)
+
+    try:
+        executor.execute(ami_id=args.ami_id,
+                         artifact_id=args.artifact_id)
+    except DeployException as error:
+        print "ERROR: {0}".format(error)
+    except Exception as error:
+        traceback.print_exc(file=sys.stdout)
+        traceback.print_stack(file=sys.stdout)
+        print "ERROR: {0}".format(error)
+        traceback.print_exc(file=sys.stdout)
+        sys.exit(1)
+
 
 def main(argv=None):
 
