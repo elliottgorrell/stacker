@@ -9,6 +9,7 @@ from stacker import deploy
 class DeployExecutorTest(TestCase):
 
     cf_json = os.path.join(os.path.dirname(__file__),'resources/cloudformation.json')
+    cf_yaml_functions = os.path.join(os.path.dirname(__file__), 'resources/cf_functions.yaml')
     config_json = os.path.join(os.path.dirname(__file__), 'resources/config.json')
 
     def test_error_thrown_on_incorrect_config_file_format(self):
@@ -30,9 +31,6 @@ class DeployExecutorTest(TestCase):
 
         executor.execute(stack_name="test-stack",template_name=self.cf_json)
 
-        executor.cf_client.create_change_set.assert_called()
-        executor.cf_client.wait_for_change_set_to_complete.assert_called()
-
     def test_deploy_with_json_config(self):
         executor = deploy.DeployExecutor()
 
@@ -42,6 +40,20 @@ class DeployExecutorTest(TestCase):
         executor.cf_client.wait_for_change_set_to_complete = MagicMock()
 
         executor.execute(stack_name="test-stack",template_name=self.cf_json, config_filename=self.config_json, create=True)
+
+        executor.cf_client.create_change_set.assert_called()
+        executor.cf_client.wait_for_change_set_to_complete.assert_called()
+
+    # Tests that we can parse yaml containing Cloudformation functions
+    def test_load_yaml_cf_with_functions(self):
+        executor = deploy.DeployExecutor()
+
+        executor.cf_client = MagicMock()
+
+        executor.cf_client.create_change_set = MagicMock()
+        executor.cf_client.wait_for_change_set_to_complete = MagicMock()
+
+        executor.execute(stack_name="test-stack",template_name=self.cf_yaml_functions, config_filename=self.config_json, create=True)
 
         executor.cf_client.create_change_set.assert_called()
         executor.cf_client.wait_for_change_set_to_complete.assert_called()
