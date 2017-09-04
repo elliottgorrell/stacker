@@ -11,33 +11,40 @@ from cf_helper.utils import DeployException, STSUtil
 
 class AMIExecutor(object):
 
-    def execute(self, role, artifact_id, ami_id, debug=False):
+    def __init__(self, role=None, debug=False):
+        super(AMIExecutor, self).__init__()
+
+        self.debug = debug
+        self.role = role
+
+        if self.role:
+            sts = STSUtil(sts_arn=self.role, debug=debug)
+            credentials = sts.authenticate_role()['Credentials']
+
+            self.ec2_client = boto3.client('ec2',
+                                           aws_access_key_id=credentials['AccessKeyId'],
+                                           aws_secret_access_key=credentials['SecretAccessKey'],
+                                           aws_session_token=credentials['SessionToken'])
+
+        else:
+            self.ec2_client = boto3.client('ec2')
+
+    def execute(self, artifact_id=None, ami_id=None):
 
         try:
-            if role:
-                sts = STSUtil(sts_arn=role, debug=debug)
-                credentials = sts.authenticate_role()['Credentials']
-
-                ec2_client = boto3.client('ec2',
-                                         aws_access_key_id = credentials['AccessKeyId'],
-                                         aws_secret_access_key = credentials['SecretAccessKey'],
-                                         aws_session_token = credentials['SessionToken'],)
-
-            else:
-                ec2_client = boto3.client('ec2')
-
-            images = []
-            search_val = "unknown"
+            # images = []
+            search_val = None
 
             if artifact_id:
                 search_val = artifact_id
-                images = ec2_client.describe_images(Filters=[
-                    {'Name': 'tag:ArtifactID',
-                     'Values': [artifact_id]}
-                ])['Images']
+                images = self.ec2_client.describe_images(Filters=[
+                    {
+                        'Name': 'tag:ArtifactID',
+                        'Values': [artifact_id]
+                    }])['Images']
             elif ami_id:
                 search_val = ami_id
-                images = ec2_client.describe_images(ImageIds=[ami_id])['Images']
+                images = self.ec2_client.describe_images(ImageIds=[ami_id])['Images']
             else:
                 raise DeployException("--artifact-id or --ami-id must be supplied for the search")
 
@@ -48,11 +55,14 @@ class AMIExecutor(object):
                 raise DeployException("More than 1 image found for search '{}'".format(search_val))
             else:
                 ami_id = images[0]["ImageId"]
+                name = images[0]['Name']
+                create_date = images[0]['CreationDate']
 
-                if debug:
-                    print "Located AMI '{}' - {} created {}".format(ami_id, images[0]['Name'], images[0]['CreationDate'])
+                if self.debug:
+                    print "Located AMI '{}' - {} created {}".format(ami_id, name, create_date)
                 else:
                     print ami_id
+                    return ami_id
 
         except botocore.exceptions.ClientError as e:
             if str(e) == "An error occurred (ValidationError) when calling the UpdateStack operation: No updates are to be performed.":
@@ -60,12 +70,3 @@ class AMIExecutor(object):
             else:
                 print "Unexpected error: %s" % e
                 sys.exit(1)
-        except DeployException as error:
-            print "ERROR: {0}".format(error)
-            sys.exit(1)
-        except Exception as error:
-            traceback.print_exc(file=sys.stdout)
-            traceback.print_stack(file=sys.stdout)
-            print "ERROR: {0}".format(error)
-            traceback.print_exc(file=sys.stdout)
-            sys.exit(1)
