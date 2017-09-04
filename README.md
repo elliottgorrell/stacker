@@ -73,7 +73,7 @@ usage: stacker deploy [-h] [--debug] --stack_name STACK_NAME [--create]
                     [--delete] [--config_filename CONFIG_FILENAME] --template
                     TEMPLATE [--ami_id AMI_ID] [--ami_tag_value AMI_TAG_VALUE]
                     [--scope SCOPE] [--dry_run]
-                    [--add_parameters [ADD_PARAMETERS [ADD_PARAMETERS ...]]]
+                    [--add_parameters PARAMETER1=VALUE1 PARAMETER2=VALUE2... ]
                     [--version VERSION]
 
 optional arguments:

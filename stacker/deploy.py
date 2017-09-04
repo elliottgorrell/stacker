@@ -1,4 +1,4 @@
-__author__ = "Steve Mactaggart"
+__author__ = "Steve Mactaggart && Elliott Gorrell"
 
 import base64
 import json

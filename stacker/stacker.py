@@ -1,6 +1,6 @@
 from stacker.cf_helper.utils import DeployException
 
-__author__ = 'steve.mactaggart'
+__author__ = 'steve.mactaggart & elliott.gorrell'
 
 import argparse
 import os
