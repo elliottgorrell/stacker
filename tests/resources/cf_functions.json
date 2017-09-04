@@ -1,0 +1,57 @@
+{
+  "Parameters" : {
+    "ExistingSecurityGroup" : {
+      "Description" : "An existing security group ID (optional).",
+      "Default" : "NONE",
+      "Type" : "String",
+      "AllowedValues" : ["default", "NONE"]
+    }
+  },
+
+  "Conditions" : {
+    "CreateNewSecurityGroup" : {"Fn::Equals" : [{"Ref" : "ExistingSecurityGroup"}, "NONE"] }
+  },
+
+  "Resources" : {
+    "MyInstance" : {
+      "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+          "ImageId" : "ami-1b814f72",
+          "SecurityGroups" : [{
+            "Fn::If" : [
+              "CreateNewSecurityGroup",
+              {"Ref" : "NewSecurityGroup"},
+              {"Ref" : "ExistingSecurityGroup"}
+            ]
+          }]
+        }
+    },
+
+    "NewSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Condition" : "CreateNewSecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable HTTP access via port 80",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "80",
+          "ToPort" : "80",
+          "CidrIp" : "0.0.0.0/0"
+        } ]
+      }
+    }
+  },
+
+  "Outputs" : {
+    "SecurityGroupId" : {
+      "Description" : "Group ID of the security group used.",
+      "Value" : {
+        "Fn::If" : [
+          "CreateNewSecurityGroup",
+          {"Ref" : "NewSecurityGroup"},
+          {"Ref" : "ExistingSecurityGroup"}
+        ]
+      }
+    }
+  }
+}
