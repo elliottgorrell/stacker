@@ -1,4 +1,4 @@
-from stacker.cf_helper.utils import DeployException
+from cf_helper.utils import DeployException
 
 __author__ = 'steve.mactaggart & elliott.gorrell'
 
