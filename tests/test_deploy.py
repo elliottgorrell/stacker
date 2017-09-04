@@ -47,7 +47,7 @@ class DeployExecutorTest(TestCase):
 
 
     # Tests that we can parse yaml containing Cloudformation functions
-    def test_load_yaml_cf_with_functions(self):
+    def test_deploy_yaml_cf_with_functions(self):
         executor = deploy.DeployExecutor()
 
         executor.cf_client = MagicMock()
@@ -61,7 +61,7 @@ class DeployExecutorTest(TestCase):
         executor.cf_client.wait_for_change_set_to_complete.assert_called()
 
     # Tests that we can parse json containing Cloudformation functions
-    def test_load_json_cf_with_functions(self):
+    def test_deploy_json_cf_with_functions(self):
         executor = deploy.DeployExecutor()
 
         executor.cf_client = MagicMock()
