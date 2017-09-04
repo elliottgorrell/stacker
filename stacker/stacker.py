@@ -6,6 +6,8 @@ import argparse
 import os
 import sys, traceback
 
+import pkg_resources  # part of setuptools
+
 from deploy import DeployExecutor
 from ami import AMIExecutor
 
@@ -117,7 +119,7 @@ def main(argv=None):
         parser = argparse.ArgumentParser(prog='stacker', description="A set of utilities for Deploying Cloudformation Stacks")
         parser.add_argument('--debug', '-d', default=False, help='Show debug log messages', action="store_true")
         parser.add_argument('--role', help='The AWS IAM Role to assume.')
-        # parser.add_argument("--version", help="Print version and quit", dest="show_version", action="store_true")
+        parser.add_argument('--version','-v', help="Prints the version", dest="show_version", action="version", version=pkg_resources.require("Stacker")[0].version)
 
         subparsers = parser.add_subparsers()
 
