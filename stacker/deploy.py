@@ -32,7 +32,7 @@ class DeployExecutor(object):
         self.role = role
 
         try:
-            config_params = dict
+            config_params = dict()
 
             if config_filename is not None:
                 if debug:
