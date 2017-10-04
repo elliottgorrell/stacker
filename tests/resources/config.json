@@ -1,0 +1,9 @@
+{
+  "KeyName": "key1",
+  "InstanceType": "t2.micro",
+  "SSHLocation": "0.0.0.0/0:",
+  "DBName": "MegaDB",
+  "DBUser": "auser",
+  "DBPassword": "Password123",
+  "DBRootPassword": "UltraSecretPassword"
+}
