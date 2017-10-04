@@ -24,15 +24,15 @@ class DeployExecutor(object):
 
     role = None
 
-    def execute(self, stack_name, config_filename, template_name,
-                role, add_parameters, version, ami_id, ami_tag_value,
-                scope, create=False, delete=False, dry_run=False,
+    def execute(self, stack_name, template_name, config_filename=None,
+                role=None, add_parameters=None, version=None, ami_id=None, ami_tag_value=None,
+                scope=None, create=False, delete=False, dry_run=False,
                 debug=False):
 
         self.role = role
 
         try:
-            config_params = dict
+            config_params = dict()
 
             if config_filename is not None:
                 if debug:
@@ -48,8 +48,6 @@ class DeployExecutor(object):
                 config_params.update(adds)
 
             self.create_boto_clients()
-
-            cf_util = CloudFormationUtil(self.cf_client)
 
             if version:
                 config_params["VersionParam"] = version
@@ -103,7 +101,7 @@ class DeployExecutor(object):
                 changeset = self.get_change_set(stack_name, raw_cloudformation, parameters, change_set_name)
 
             if changeset is not None:
-                cf_util.wait_for_change_set_to_complete(change_set_name=change_set_name,
+                self.cf_client.wait_for_change_set_to_complete(change_set_name=change_set_name,
                                                                     stack_name=stack_name,
                                                                     debug=False)
 
@@ -119,7 +117,7 @@ class DeployExecutor(object):
                     response = self.cf_client.execute_change_set(ChangeSetName=change_set_name,
                                                             StackName=stack_name)
 
-                    cf_util.wait_for_deploy_to_complete(stack_name=stack_name)
+                    self.cf_client.wait_for_deploy_to_complete(stack_name=stack_name)
 
 
         except botocore.exceptions.ClientError as e:
@@ -142,7 +140,8 @@ class DeployExecutor(object):
         if self.ec2_client is None:
             self.ec2_client = self._boto_connect('ec2')
         if self.cf_client is None:
-            self.cf_client = self._boto_connect('cloudformation')
+            cf_client = self._boto_connect('cloudformation')
+            self.cf_client = CloudFormationUtil(cf_client)
         if self.kms_client is None:
             self.kms_client = self._boto_connect('kms')
 
