@@ -1,23 +1,22 @@
 import time
 import boto3
 import getpass
+import logging
 
 class DeployException(Exception):
     pass
 
 class STSUtil(object):
 
-    def __init__(self, sts_arn, debug=False):
+    def __init__(self, sts_arn):
         self.sts_arn = sts_arn
-        self.debug = debug
 
     def authenticate_role(self):
         sts_client = boto3.client("sts")
 
         current_user = getpass.getuser()
         assuming_user = "deploy@"+current_user
-        if self.debug:
-            print "Assuming role of {} as {}".format(self.sts_arn, assuming_user)
+        logging.info("Assuming role of {} as {}".format(self.sts_arn, assuming_user))
         self.role = sts_client.assume_role(RoleArn=self.sts_arn,
                                            RoleSessionName=assuming_user)
 
@@ -35,7 +34,7 @@ class CloudFormationUtil(object):
                 return True
         return False
 
-    def wait_for_change_set_to_complete(self, stack_name, change_set_name, loop_timeout=1, max_loops=30, debug=True):
+    def wait_for_change_set_to_complete(self, stack_name, change_set_name, loop_timeout=1, max_loops=30):
 
         still_checking = True
         loop_count = 1
@@ -50,8 +49,7 @@ class CloudFormationUtil(object):
 
             state = stack['Status']
 
-            if debug:
-                print "({}/{}) - ChangeSet [{}] for {} is {}".format(loop_count, max_loops, change_set_name, stack_name, state)
+            logging.info("({}/{}) - ChangeSet [{}] for {} is {}".format(loop_count, max_loops, change_set_name, stack_name, state))
 
             if "IN_PROGRESS" in state or "PENDING" in state:
                 still_checking = True

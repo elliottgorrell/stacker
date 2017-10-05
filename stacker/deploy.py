@@ -6,6 +6,7 @@ import re
 import sys
 import traceback
 from datetime import datetime
+import logging
 
 import boto3
 import botocore
@@ -29,15 +30,15 @@ class DeployExecutor(object):
                 scope=None, create=False, delete=False, dry_run=False,
                 debug=False):
 
+        if debug:
+            logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+
         self.role = role
 
         try:
             config_params = dict()
 
             if config_filename is not None:
-                if debug:
-                    print "Resolving config file {} using scope {}".format(config_filename, scope)
-
                 config_params = self.load_parameters(config_filename, scope)
 
             # First override any of the defaults with those supplied at the command line
@@ -102,8 +103,7 @@ class DeployExecutor(object):
 
             if changeset is not None:
                 self.cf_client.wait_for_change_set_to_complete(change_set_name=change_set_name,
-                                                                    stack_name=stack_name,
-                                                                    debug=False)
+                                                                    stack_name=stack_name)
 
                 change_set_details = self.cf_client.describe_change_set(ChangeSetName=change_set_name,
                                                                    StackName=stack_name)
@@ -147,7 +147,7 @@ class DeployExecutor(object):
 
     def _boto_connect(self, client_type):
         if self.role:
-            sts = STSUtil(sts_arn=self.role, debug=True)
+            sts = STSUtil(sts_arn=self.role)
             credentials = sts.authenticate_role()['Credentials']
             client = boto3.client(client_type,
                                      aws_access_key_id=credentials['AccessKeyId'],
@@ -161,6 +161,7 @@ class DeployExecutor(object):
         return client
 
     def load_parameters(self, config_filename, scope=None):
+        logging.info("Resolving config file {} using scope {}".format(config_filename, scope))
         try:
             with open(config_filename) as config_file:
                 if re.match(self.REGEX_YAML, config_filename):
