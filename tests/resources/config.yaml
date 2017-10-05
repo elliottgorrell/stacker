@@ -1,0 +1,9 @@
+DB:
+  Name: "MegaDB"
+  User: "auser"
+  Password: "Password123"
+  RootPassword: "UltraSecretPassword"
+
+APP:
+  Name: CoolApp
+  Key: AKey
