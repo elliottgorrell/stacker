@@ -8,10 +8,8 @@ def test_no_parameters():
 
     executor = ami.AMIExecutor(None)
 
-    with pytest.raises(cf_utils.DeployException) as ex:
+    with pytest.raises(cf_utils.DeployException, message="--artifact-id or --ami-id must be supplied for the search"):
         executor.execute()
-
-    assert "--artifact-id or --ami-id must be supplied for the search" == ex.value.message
 
 def test_by_artifact_id_no_result():
 
@@ -21,12 +19,10 @@ def test_by_artifact_id_no_result():
     mock_response = {"Images": []}
     executor.ec2_client.describe_images = MagicMock(return_value=mock_response)
 
-    with pytest.raises(cf_utils.DeployException) as ex:
+    with pytest.raises(cf_utils.DeployException, message="No images found for search 'artifact'"):
         result = executor.execute(artifact_id="artifact")
 
     assert [call.describe_images(Filters=[{'Values': ['artifact'], 'Name': 'tag:ArtifactID'}])] == executor.ec2_client.mock_calls
-
-    assert "No images found for search 'artifact'" == ex.value.message
 
 def test_by_artifact_id_with_single_result():
 
@@ -50,11 +46,10 @@ def test_by_artifact_id_with_duplicate_result():
 
     executor.ec2_client.describe_images = MagicMock(return_value=mock_response)
 
-    with pytest.raises(cf_utils.DeployException) as ex:
+    with pytest.raises(cf_utils.DeployException, message="More than 1 image found for search 'artifact'"):
         result = executor.execute(artifact_id="artifact")
 
     assert [call.describe_images(Filters=[{'Values': ['artifact'], 'Name': 'tag:ArtifactID'}])] == executor.ec2_client.mock_calls
-    assert "More than 1 image found for search 'artifact'" == ex.value.message
 
 def test_by_ami_id_with_no_result():
 
@@ -64,11 +59,10 @@ def test_by_ami_id_with_no_result():
     mock_response = {"Images": []}
     executor.ec2_client.describe_images = MagicMock(return_value=mock_response)
 
-    with pytest.raises(cf_utils.DeployException) as ex:
+    with pytest.raises(cf_utils.DeployException, message="No images found for search 'ami-1234'"):
         executor.execute(ami_id="ami-1234")
 
     assert [call.describe_images(ImageIds=['ami-1234'])] == executor.ec2_client.mock_calls
-    assert "No images found for search 'ami-1234'" == ex.value.message
 
 def test_by_ami_id_with_single_result():
 
@@ -90,8 +84,7 @@ def test_by_ami_id_with_multiple_results():
                                 {"ImageId": "id-1235", "Name": "mock-image", "CreationDate": "today"}]}
     executor.ec2_client.describe_images = MagicMock(return_value=mock_response)
 
-    with pytest.raises(cf_utils.DeployException) as ex:
+    with pytest.raises(cf_utils.DeployException, message="More than 1 image found for search 'ami-1234'"):
         executor.execute(ami_id="ami-1234")
 
     assert [call.describe_images(ImageIds=['ami-1234'])] == executor.ec2_client.mock_calls
-    assert "More than 1 image found for search 'ami-1234'" == ex.value.message
