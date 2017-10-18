@@ -50,23 +50,46 @@ def test_parse_yaml_cf_with_functions():
     executor = deploy.DeployExecutor()
     cloudformation_map = executor.load_cloudformation(cf_yaml_functions)
 
+    assert cloudformation_map['Resources']['MyInstance']['Properties']['ImageId'] == "ami-1b814f72"
+
 # Tests that we can parse json containing Cloudformation functions
 def test_parse_json_cf_with_functions():
     executor = deploy.DeployExecutor()
+    cloudformation_map = executor.load_cloudformation(cf_json_functions)
 
-    executor.load_cloudformation(cf_json_functions)
+    assert cloudformation_map['Resources']['MyInstance']['Properties']['ImageId'] == "ami-1b814f72"
 
-# Tests that we can parse json containing Cloudformation functions
-def test_full_deploy_json():
+# # Tests that we can deploy a JSON Cloudformation the full way
+# def test_full_deploy_json():
+#     executor = deploy.DeployExecutor()
+#
+#     executor.cf_client.create_change_set = MagicMock()
+#     executor.cf_client.wait_for_change_set_to_complete = MagicMock()
+#     executor.cf_client.describe_change_set = MagicMock(return_value={'status':'running'})
+#     executor.cf_client.execute_change_set = MagicMock()
+#     executor.cf_client.describe_stacks = MagicMock()
+#
+#     executor.execute(stack_name="test-stack",template_name=cf_json, config_filename=config_json, create=True)
+#
+#     executor.cf_client.create_change_set.assert_called()
+#     executor.cf_client.wait_for_change_set_to_complete.assert_called()
+
+def test_all_extra_config_options_provided():
     executor = deploy.DeployExecutor()
 
-    executor.cf_client.create_change_set = MagicMock()
-    executor.cf_client.wait_for_change_set_to_complete = MagicMock()
-    executor.cf_client.describe_change_set = MagicMock()
-    executor.cf_client.execute_change_set = MagicMock()
-    executor.cf_client.describe_stacks = MagicMock()
+    config_params = executor.resolve_config_params(None,None,["animal=dog","house=blue"],"ami-ac3nf6",None)
 
-    executor.execute(stack_name="test-stack",template_name=cf_json_functions, config_filename=config_json, create=True)
+    assert config_params['animal'] == 'dog'
+    assert config_params['house'] == 'blue'
+    assert config_params['AMIParam'] == 'ami-ac3nf6'
 
-    executor.cf_client.create_change_set.assert_called()
-    executor.cf_client.wait_for_change_set_to_complete.assert_called()
+def test_ami_tag_config_provided():
+    executor = deploy.DeployExecutor()
+
+    executor.get_ami_id_by_tag = MagicMock(return_value="ami-ac3nf6")
+
+    config_params = executor.resolve_config_params(None,None,None,None,"atag")
+
+
+    assert config_params['AMIParam'] == 'ami-ac3nf6'
+    executor.get_ami_id_by_tag.call_args.assert_called_with('atag')

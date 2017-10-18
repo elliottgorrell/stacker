@@ -27,33 +27,10 @@ class DeployExecutor(object):
                 scope=None, create=False, delete=False, dry_run=False):
 
         try:
-            config_params = dict()
+            config_params = self.resolve_config_params(config_filename, scope, add_parameters, ami_id, ami_tag_value)
 
-            if config_filename is not None:
-                if debug:
-                    print "Resolving config file {} using scope {}".format(config_filename, scope)
-
-                config_params = self.load_parameters(config_filename, scope)
-
-            # First override any of the defaults with those supplied at the command line
-            if add_parameters is None or len(add_parameters) == 0:
-                adds = {}
-            else:
-                adds = dict(item.split("=") for item in add_parameters)
-                config_params.update(adds)
-
-            self.create_boto_clients()
-
-            if version:
-                config_params["VersionParam"] = version
-            else:
+            if version is None:
                 version = datetime.now().isoformat('-').replace(":", "-")
-
-            if ami_id:
-                config_params["AMIParam"] = ami_id
-            elif ami_tag_value:
-                config_params["AMIParam"] = self.get_ami_id_by_tag(ami_tag_value)
-
 
             secrets = []
             for key in config_params:
@@ -295,3 +272,26 @@ class DeployExecutor(object):
             raise DeployException("It looks like the CloudFormation template file is empty")
 
         return cloudformation
+
+    def resolve_config_params(self,config_filename, scope, add_parameters, ami_id, ami_tag_value):
+        config_params = dict()
+
+        if config_filename is not None:
+            if self.debug:
+                print "Resolving config file {} using scope {}".format(config_filename, scope)
+
+            config_params = self.load_parameters(config_filename, scope)
+
+        # First override any of the defaults with those supplied at the command line
+        if add_parameters is None or len(add_parameters) == 0:
+            adds = {}
+        else:
+            adds = dict(item.split("=") for item in add_parameters)
+            config_params.update(adds)
+
+        if ami_id:
+            config_params["AMIParam"] = ami_id
+        elif ami_tag_value:
+            config_params["AMIParam"] = self.get_ami_id_by_tag(ami_tag_value)
+
+        return config_params
