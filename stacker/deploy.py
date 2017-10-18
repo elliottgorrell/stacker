@@ -54,9 +54,9 @@ class DeployExecutor(object):
             # They need to be re-formated from the python dictionary into boto3 useable format
             parameters = self.import_params_from_config(cloudformation, config_params, create, secrets)
 
-            print "Using stack parameters"
+            print("Using stack parameters")
             # This hides any encrypted values that were decrypted with KMS
-            print secure_print(json.dumps(parameters, indent=2), secrets)
+            print(secure_print(json.dumps(parameters, indent=2), secrets))
 
             if create:
                 change_set_name = "Create-{}".format(version.replace(".", "-"))
@@ -65,9 +65,9 @@ class DeployExecutor(object):
             elif delete:
                 if not dry_run:
                     result = self.cf_client.delete_stack(StackName=stack_name)
-                    print result
+                    print (result)
                 else:
-                    print "[Dry-Run] Not deleting stack."
+                    print ("[Dry-Run] Not deleting stack.")
             else:
                 change_set_name = "Update-{}".format(version.replace(".", "-"))
                 changeset = self.get_change_set(stack_name, raw_cloudformation, parameters, change_set_name)
@@ -94,17 +94,17 @@ class DeployExecutor(object):
 
         except botocore.exceptions.ClientError as e:
             if str(e) == "An error occurred (ValidationError) when calling the UpdateStack operation: No updates are to be performed.":
-                print "No stack update required - CONTINUING"
+                print ("No stack update required - CONTINUING")
             else:
-                print "Unexpected error: %s" % e
+                print ("Unexpected error: {}".format(e))
                 sys.exit(1)
         except DeployException as error:
-            print "ERROR: {0}".format(error)
+            print ("ERROR: {0}".format(error))
             sys.exit(1)
         except Exception as error:
             traceback.print_exc(file=sys.stdout)
             traceback.print_stack(file=sys.stdout)
-            print "ERROR: {0}".format(error)
+            print ("ERROR: {0}".format(error))
             traceback.print_exc(file=sys.stdout)
             sys.exit(1)
 
@@ -158,11 +158,11 @@ class DeployExecutor(object):
         if len(images) == 0:
             raise DeployException("No images found for search '{}'".format(ami_tag_value))
         elif len(images) > 1:
-            print images
+            print (images)
             raise DeployException("More than 1 image found for search '{}'".format(ami_tag_value))
         else:
             ami_id = images[0]["ImageId"]
-            print "Located AMI {} - {} created {}".format(ami_id, images[0]['Name'], images[0]['CreationDate'])
+            print ("Located AMI {} - {} created {}".format(ami_id, images[0]['Name'], images[0]['CreationDate']))
 
         return ami_id
 
@@ -190,14 +190,14 @@ class DeployExecutor(object):
                             sys.exit(-1)
                     # This is an update of existing stack so use current value
                     else:
-                        print "Using current stack value for parameter {}".format(param)
+                        print ("Using current stack value for parameter {}".format(param))
                         parameters += [{
                             "ParameterKey": param,
                             "UsePreviousValue": True
                         }]
             return parameters
         else:
-            print "Specified template has no stack parameters"
+            print ("Specified template has no stack parameters")
 
     def get_change_set(self, stack_name, cloudformation, parameters, change_set_name, create = False):
         if create:
@@ -226,9 +226,9 @@ class DeployExecutor(object):
 
     def print_change_set(self, change_set_details):
         if len(change_set_details['Changes']) > 0:
-            print "-------------------------------"
-            print "CloudFormation changes to apply"
-            print "-------------------------------"
+            print ("-------------------------------")
+            print ("CloudFormation changes to apply")
+            print ("-------------------------------")
             for x in change_set_details['Changes']:
                 change = x["ResourceChange"]
 
@@ -247,12 +247,12 @@ class DeployExecutor(object):
 
                 change_mode = "[{} - {}]".format(change["Action"], replace_mode)
 
-                print "{} {}/{} ({})".format(change_mode.ljust(34), change["LogicalResourceId"],
-                                             change.get("PhysicalResourceId", ""), change["ResourceType"])
+                print ("{} {}/{} ({})".format(change_mode.ljust(34), change["LogicalResourceId"],
+                                             change.get("PhysicalResourceId", ""), change["ResourceType"]))
 
-            print ""
+            print ()
         else:
-            print "No CloudFormation changes detected"
+            print ("No CloudFormation changes detected")
 
     def load_cloudformation(self, template_name):
         try:
@@ -278,7 +278,7 @@ class DeployExecutor(object):
 
         if config_filename is not None:
             if self.debug:
-                print "Resolving config file {} using scope {}".format(config_filename, scope)
+                print ("Resolving config file {} using scope {}".format(config_filename, scope))
 
             config_params = self.load_parameters(config_filename, scope)
 

@@ -1,10 +1,7 @@
 import pytest
 import os
 from mock import MagicMock
-from mock import patch
 from stacker import deploy
-from moto import mock_cloudformation
-import boto3
 
 
 cf_json = os.path.join(os.path.dirname(__file__),'resources/cloudformation.json')

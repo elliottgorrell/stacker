@@ -51,7 +51,7 @@ class AMIExecutor(object):
             if len(images) == 0:
                 raise DeployException("No images found for search '{}'".format(search_val))
             elif len(images) > 1:
-                print images
+                print (images)
                 raise DeployException("More than 1 image found for search '{}'".format(search_val))
             else:
                 ami_id = images[0]["ImageId"]
@@ -59,14 +59,14 @@ class AMIExecutor(object):
                 create_date = images[0]['CreationDate']
 
                 if self.debug:
-                    print "Located AMI '{}' - {} created {}".format(ami_id, name, create_date)
+                    print ("Located AMI '{}' - {} created {}".format(ami_id, name, create_date))
                 else:
-                    print ami_id
+                    print (ami_id)
                     return ami_id
 
         except botocore.exceptions.ClientError as e:
             if str(e) == "An error occurred (ValidationError) when calling the UpdateStack operation: No updates are to be performed.":
-                print "No stack update required - CONTINUING"
+                print ("No stack update required - CONTINUING")
             else:
-                print "Unexpected error: %s" % e
+                print ("Unexpected error: {}".format(e))
                 sys.exit(1)

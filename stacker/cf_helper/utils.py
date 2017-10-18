@@ -17,7 +17,7 @@ class STSUtil(object):
         current_user = getpass.getuser()
         assuming_user = "deploy@"+current_user
         if self.debug:
-            print "Assuming role of {} as {}".format(self.sts_arn, assuming_user)
+            print ("Assuming role of {} as {}".format(self.sts_arn, assuming_user))
         self.role = sts_client.assume_role(RoleArn=self.sts_arn,
                                            RoleSessionName=assuming_user)
 
@@ -55,7 +55,7 @@ class CloudFormationUtil( type(boto3.client('cloudformation')) ):
             state = stack['Status']
 
             if debug:
-                print "({}/{}) - ChangeSet [{}] for {} is {}".format(loop_count, max_loops, change_set_name, stack_name, state)
+                print("({}/{}) - ChangeSet [{}] for {} is {}".format(loop_count, max_loops, change_set_name, stack_name, state))
 
             if "IN_PROGRESS" in state or "PENDING" in state:
                 still_checking = True
@@ -85,7 +85,7 @@ class CloudFormationUtil( type(boto3.client('cloudformation')) ):
             stack = self.describe_stacks(StackName=stack_name)['Stacks'][0]
             state = stack['StackStatus']
 
-            print "({}/{}) - {} is {}".format(loop_count, max_loops, stack_name, state)
+            print("({}/{}) - {} is {}".format(loop_count, max_loops, stack_name, state))
             if "IN_PROGRESS" in state:
                 still_checking = True
             elif "FAILED" in state or "UPDATE_ROLLBACK_COMPLETE" == state:
@@ -103,10 +103,9 @@ class CloudFormationUtil( type(boto3.client('cloudformation')) ):
                 time.sleep(loop_timeout)
 
         if show_outputs and 'Outputs' in stack:
-            print ""
-            print "Stack Outputs"
-            print "-------------"
+            print()
+            print("Stack Outputs")
+            print("-------------")
             for output in stack['Outputs']:
-                print "  {}: {}".format(output['OutputKey'], output['OutputValue'])
-            print ""
-            print ""
+                print ("  {}: {}".format(output['OutputKey'], output['OutputValue']))
+            print()
