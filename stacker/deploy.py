@@ -11,8 +11,8 @@ import boto3
 import botocore
 import yaml
 
-from cf_helper import secure_print
-from cf_helper.utils import DeployException, CloudFormationUtil, STSUtil
+from .cf_helper import secure_print
+from .cf_helper.utils import DeployException, CloudFormationUtil, STSUtil
 
 class DeployExecutor(object):
     REGEX_YAML = re.compile('.+\.yaml|.+.yml')

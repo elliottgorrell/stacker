@@ -6,7 +6,7 @@ import traceback
 import boto3
 import botocore
 
-from cf_helper.utils import DeployException, STSUtil
+from .cf_helper.utils import DeployException, STSUtil
 
 
 class AMIExecutor(object):
