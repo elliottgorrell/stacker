@@ -46,32 +46,15 @@ def test_deploy_with_json_config():
 
 
 # Tests that we can parse yaml containing Cloudformation functions
-def test_deploy_yaml_cf_with_functions():
+def test_parse_yaml_cf_with_functions():
     executor = deploy.DeployExecutor()
-
-    executor.cf_client = MagicMock()
-
-    executor.cf_client.create_change_set = MagicMock()
-    executor.cf_client.wait_for_change_set_to_complete = MagicMock()
-
-    executor.execute(stack_name="test-stack", template_name=cf_yaml_functions, config_filename=config_json, create=True)
-
-    executor.cf_client.create_change_set.assert_called()
-    executor.cf_client.wait_for_change_set_to_complete.assert_called()
+    cloudformation_map = executor.load_cloudformation(cf_yaml_functions)
 
 # Tests that we can parse json containing Cloudformation functions
-def test_deploy_json_cf_with_functions():
+def test_parse_json_cf_with_functions():
     executor = deploy.DeployExecutor()
 
-    executor.cf_client = MagicMock()
-
-    executor.cf_client.create_change_set = MagicMock()
-    executor.cf_client.wait_for_change_set_to_complete = MagicMock()
-
-    executor.execute(stack_name="test-stack", template_name=cf_json_functions, config_filename=config_json, create=True)
-
-    executor.cf_client.create_change_set.assert_called()
-    executor.cf_client.wait_for_change_set_to_complete.assert_called()
+    executor.load_cloudformation(cf_json_functions)
 
 # Tests that we can parse json containing Cloudformation functions
 def test_full_deploy_json():
