@@ -23,10 +23,14 @@ class STSUtil(object):
 
         return self.role
 
-class CloudFormationUtil(object):
+# We get the boto3 cloudformation client class at runtime because the classes are created
+# dynamically in boto by parsing json files describing each class
+class CloudFormationUtil( type(boto3.client('cloudformation')) ):
 
     def __init__(self, cf_client):
-        self.cf_client = cf_client
+        # Set all the writable attributes of this class to point to the memory address
+        # of cf_client allowing us to initalise this object with an already instantiated boto3 client
+        self.__dict__ = cf_client.__dict__
 
     def has_parameter(self, parameter_set, paramater_name):
 
@@ -43,7 +47,7 @@ class CloudFormationUtil(object):
         stack = None
         while still_checking:
 
-            stack = self.cf_client.describe_change_set(
+            stack = self.describe_change_set(
                 ChangeSetName=change_set_name,
                 StackName=stack_name,
                 )
@@ -78,7 +82,7 @@ class CloudFormationUtil(object):
         stack = None
         while still_checking:
 
-            stack = self.cf_client.describe_stacks(StackName=stack_name)['Stacks'][0]
+            stack = self.describe_stacks(StackName=stack_name)['Stacks'][0]
             state = stack['StackStatus']
 
             print "({}/{}) - {} is {}".format(loop_count, max_loops, stack_name, state)

@@ -140,8 +140,7 @@ class DeployExecutor(object):
         if self.ec2_client is None:
             self.ec2_client = self._boto_connect('ec2')
         if self.cf_client is None:
-            cf_client = self._boto_connect('cloudformation')
-            self.cf_client = CloudFormationUtil(cf_client)
+            self.cf_client = CloudFormationUtil(self._boto_connect('cloudformation'))
         if self.kms_client is None:
             self.kms_client = self._boto_connect('kms')
 
