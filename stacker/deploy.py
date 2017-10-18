@@ -18,18 +18,14 @@ class DeployExecutor(object):
     REGEX_YAML = re.compile('.+\.yaml|.+.yml')
     REGEX_JSON = re.compile('.+\.json')
 
-    cf_client = None
-    ec2_client = None
-    kms_client = None
-
-    role = None
+    def __init__(self, role=None):
+        self.create_boto_clients(role)
+        self.cf_client, self.ec2_client, self.kms_client = self.create_boto_clients(role)
 
     def execute(self, stack_name, template_name, config_filename=None,
-                role=None, add_parameters=None, version=None, ami_id=None, ami_tag_value=None,
+                add_parameters=None, version=None, ami_id=None, ami_tag_value=None,
                 scope=None, create=False, delete=False, dry_run=False,
                 debug=False):
-
-        self.role = role
 
         try:
             config_params = dict()
@@ -136,16 +132,11 @@ class DeployExecutor(object):
             traceback.print_exc(file=sys.stdout)
             sys.exit(1)
 
-    def create_boto_clients(self):
-        if self.ec2_client is None:
-            self.ec2_client = self._boto_connect('ec2')
-        if self.cf_client is None:
-            self.cf_client = CloudFormationUtil(self._boto_connect('cloudformation'))
-        if self.kms_client is None:
-            self.kms_client = self._boto_connect('kms')
+    def create_boto_clients(self, role=None):
+        return CloudFormationUtil(self._boto_connect('cloudformation', role)), self._boto_connect('ec2', role), self._boto_connect('kms', role)
 
-    def _boto_connect(self, client_type):
-        if self.role:
+    def _boto_connect(self, client_type, role=None):
+        if role:
             sts = STSUtil(sts_arn=self.role, debug=True)
             credentials = sts.authenticate_role()['Credentials']
             client = boto3.client(client_type,

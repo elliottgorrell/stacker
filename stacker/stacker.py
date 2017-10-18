@@ -61,11 +61,10 @@ def build_deploy_parser(parser):
 
 def execute_deploy(args):
 
-    executor = DeployExecutor()
+    executor = DeployExecutor(role=args.role)
     executor.execute(stack_name=args.name,
                      config_filename=args.config,
                      template_name=args.template,
-                     role=args.role,
                      add_parameters=args.add_parameters,
                      version=args.version,
                      ami_id=args.ami_id,

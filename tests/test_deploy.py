@@ -3,7 +3,10 @@ from unittest import TestCase
 import pytest
 import os
 from mock import MagicMock
+from mock import patch
 from stacker import deploy
+from moto import mock_cloudformation
+import boto3
 
 
 class DeployExecutorTest(TestCase):
@@ -60,7 +63,7 @@ class DeployExecutorTest(TestCase):
         executor.cf_client.create_change_set.assert_called()
         executor.cf_client.wait_for_change_set_to_complete.assert_called()
 
-    # Tests that we can parse json containing Cloudformation functions
+    # Tests that we can parse yaml containing Cloudformation functions
     def test_deploy_json_cf_with_functions(self):
         executor = deploy.DeployExecutor()
 
@@ -68,6 +71,22 @@ class DeployExecutorTest(TestCase):
 
         executor.cf_client.create_change_set = MagicMock()
         executor.cf_client.wait_for_change_set_to_complete = MagicMock()
+
+        executor.execute(stack_name="test-stack", template_name=self.cf_json_functions,
+                         config_filename=self.config_json, create=True)
+
+        executor.cf_client.create_change_set.assert_called()
+        executor.cf_client.wait_for_change_set_to_complete.assert_called()
+
+    # Tests that we can parse json containing Cloudformation functions
+    def test_full_deploy_json(self):
+        executor = deploy.DeployExecutor()
+
+        executor.cf_client.create_change_set = MagicMock()
+        executor.cf_client.wait_for_change_set_to_complete = MagicMock()
+        executor.cf_client.describe_change_set = MagicMock()
+        executor.cf_client.execute_change_set = MagicMock()
+        executor.cf_client.describe_stacks = MagicMock()
 
         executor.execute(stack_name="test-stack",template_name=self.cf_json_functions, config_filename=self.config_json, create=True)
 
