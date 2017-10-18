@@ -18,14 +18,13 @@ class DeployExecutor(object):
     REGEX_YAML = re.compile('.+\.yaml|.+.yml')
     REGEX_JSON = re.compile('.+\.json')
 
-    def __init__(self, role=None):
-        self.create_boto_clients(role)
+    def __init__(self, role=None, debug=False):
         self.cf_client, self.ec2_client, self.kms_client = self.create_boto_clients(role)
+        self.debug = debug
 
     def execute(self, stack_name, template_name, config_filename=None,
                 add_parameters=None, version=None, ami_id=None, ami_tag_value=None,
-                scope=None, create=False, delete=False, dry_run=False,
-                debug=False):
+                scope=None, create=False, delete=False, dry_run=False):
 
         try:
             config_params = dict()
